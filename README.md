@@ -12,11 +12,11 @@ my arduino code used in my home-automation
   * support coding for Samsung, NEC and basically all standards that are supported by the IRremoteESP8266 lib
     * Samsung tested on my TV
     * NEC tested with this https://www.amazon.de/gp/product/B07BQ4JJS6/ref=ppx_yo_dt_b_asin_title_o06_s00?ie=UTF8&psc=1
+    * implemented MANUFACTURERs are
+      * samsung  
+      * nec
+      * sony
+      * mitsubishi
   * listens for "esp/IRbridge/MANUFACTURER"
-  * MANUFACTURER can be
-    * samsung  
-    * nec
-    * sony
-    * mitsubishi
   * the transmitted value must be the Hex-code to send
   * used with a wemos d1 mini and this https://www.tindie.com/products/analysir/esp8266esp32-trx-advanced-infrared-module-ir/
