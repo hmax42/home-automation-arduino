@@ -19,4 +19,5 @@ my arduino code used in my home-automation
       * mitsubishi
   * listens for "esp/IRbridge/MANUFACTURER"
   * the transmitted value must be the Hex-code to send
+    * to get therse values i use IRrecvDemoOled from the Lib with a separate Arduino Pro Mini with an IR-LDR
   * used with a wemos d1 mini and this https://www.tindie.com/products/analysir/esp8266esp32-trx-advanced-infrared-module-ir/
