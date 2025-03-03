@@ -1,4 +1,4 @@
-
+#ifdef PSP
 
 #define WI2C 0x54
 
@@ -54,3 +54,4 @@ void ledI2c(uint8_t addr, uint8_t i) {
   wireWrite(addr, (byte) i);
   endI2c();
 }
+#endif

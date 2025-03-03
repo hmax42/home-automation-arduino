@@ -1,5 +1,11 @@
+//TODO:
+// reconnect wifi -> test
+// buttons @ atom
+//
+
+
 #include "Arduino.h"
-//old version
+//old version 1.0.6
 #ifdef ESP32
 #include "Audio.h"
 #include "SPI.h"
@@ -23,19 +29,31 @@
 #include <PubSubClient.h>
 #include <Wire.h>
 
-//#define PSP //Pimoroni Speaker Phat
-//#define PBT //Pimoroni Phat Beat
-//#define AUDIOSHIM //Pimoroni Audio Shim
-//#define MFA //Makerfabs Audio V2.0, diff I2S (RED)
-////#define DAC //diff I2S//throw away
-//#define ECHO //M5 ATOM ECHO, diff I2S
-//#define ECHO2 //M5 ATOM ECHO, diff I2S
-#define D1DAC
 
-#ifdef MFA
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#endif
+//Pimoroni Speaker Phat
+//#define PSP
+//Pimoroni Speaker Phat replacement
+//#define PSPM5ECHO
+//Pimoroni Speaker Phat replacement2 audioshim
+#define PSPSHIM
+//Pimoroni Phat Beat
+//#define PBT
+//Pimoroni Audio Shim
+//#define AUDIOSHIM
+//Makerfabs Audio V2.0, diff I2S (RED)
+//#define MFA
+//diff I2S//throw away
+//#define DAC
+//M5 ATOM ECHO, diff I2S
+//#define ECHO
+//M5 ATOM ECHO, diff I2S
+//#define ECHO2
+//ESP8266
+//#define D1DAC
+//ATOM HAT
+//#define M5SPEAKER
+//m5stickc plus hat
+//#define M5SPK
 
 #ifdef PSP
 
@@ -50,6 +68,36 @@
 #define TOPIC_VOLUME "espaudiospeakerphat/volume"
 #define MAXVOL 15
 #endif
+
+#ifdef PSPSHIM
+
+#define SD_ESPONE
+#define I2S_ESPONE
+
+#define HOSTNAME "ESPSHIMPSP"
+#define TOPIC_STATUS "espaudiospeakerphat/status"
+#define TOPIC_IP "espaudiospeakerphat/ip"
+#define TOPIC_ENABLED "espaudiospeakerphat/enabled"
+#define TOPIC_ENABLE "espaudiospeakerphat/enable"
+#define TOPIC_VOLUME "espaudiospeakerphat/volume"
+#define MAXVOL 19
+#endif
+
+#ifdef PSPM5ECHO
+
+//replacement/workaround for PSP
+#define M5ECHO
+
+#define HOSTNAME "ESPM5PSP"
+#define TOPIC_STATUS "espaudiospeakerphat/status"
+#define TOPIC_IP "espaudiospeakerphat/ip"
+#define TOPIC_ENABLED "espaudiospeakerphat/enabled"
+#define TOPIC_ENABLE "espaudiospeakerphat/enable"
+#define TOPIC_VOLUME "espaudiospeakerphat/volume"
+#define MAXVOL 19
+#endif
+
+
 #ifdef PBT
 
 #define SD_ESPONE
@@ -63,6 +111,7 @@
 #define TOPIC_VOLUME "espaudiophatbeat/volume"
 #define MAXVOL 12
 #endif
+
 #ifdef AUDIOSHIM
 
 #define SD_ESPONE
@@ -76,8 +125,13 @@
 #define TOPIC_VOLUME "espaudioshim/volume"
 #define MAXVOL 12
 #endif
-#ifdef MFA
 
+
+#ifdef MFA
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define HAZDISPLAY
 
 //SD Card
 #define SD_CS 22
@@ -126,7 +180,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #ifdef ECHO
 
-#define I2S_M5ECHO
+#define M5ECHO
 
 #define HOSTNAME "ESPECHO"
 #define TOPIC_STATUS "espaudioecho/status"
@@ -139,7 +193,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #ifdef ECHO2
 
-#define I2S_M5ECHO
+#define M5ECHO
 
 #define HOSTNAME "ESPECHO2"
 #define TOPIC_STATUS "espaudioecho2/status"
@@ -184,11 +238,52 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define I2S_LRC 32
 #endif
 
-#ifdef I2S_M5ECHO
+#ifdef M5ECHO
 #define I2S_DOUT 22
 #define I2S_BCLK 19
 #define I2S_LRC 33
+#define M5ATOM
 #endif
+
+#ifdef M5SPEAKER
+
+#define HOSTNAME "ESPSPEAKER"
+#define TOPIC_STATUS "espaudiospeaker/status"
+#define TOPIC_IP "espaudiospeaker/ip"
+#define TOPIC_ENABLED "espaudiospeaker/enabled"
+#define TOPIC_ENABLE "espaudiospeaker/enable"
+#define TOPIC_VOLUME "espaudiospeaker/volume"
+#define MAXVOL 19
+
+#define I2S_DOUT 25
+#define I2S_BCLK 22
+#define I2S_LRC 21
+#define M5ATOM
+#endif
+
+#ifdef M5SPK
+#include <M5StickC.h>
+
+#define HAZDISPLAY
+
+#define HOSTNAME "ESPSPK"
+#define TOPIC_STATUS "espaudiospk/status"
+#define TOPIC_IP "espaudiospk/ip"
+#define TOPIC_ENABLED "espaudiospk/enabled"
+#define TOPIC_ENABLE "espaudiospk/enable"
+#define TOPIC_VOLUME "espaudiospk/volume"
+#define MAXVOL 19
+
+#define M5ATOM
+#endif
+
+#ifdef M5ATOM
+#define RGBLED 27
+#define BTN 39
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel pixels(1, RGBLED, NEO_GRB + NEO_KHZ800);
+#endif
+
 
 #ifdef SD_ESPONE
 //SD Card // from waveshare esp one
@@ -208,8 +303,13 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define TOPIC_ANNOUNCE_GLOBAL "espaudio/announce"
 #define TOPIC_URL_GLOBAL "espaudio/url"
 
+
+unsigned long previousMillis = 0;
+unsigned long interval = 30000;
+
 WiFiClient espClient;
 PubSubClient client(espClient);
+
 #define NUM 5
 char topics[NUM][255] = {TOPIC_ANNOUNCE_GLOBAL,
                          TOPIC_URL_GLOBAL,
@@ -266,11 +366,20 @@ const int Pin_next = 34;// - 29 - 5
 #define DEF INPUT
 #endif
 
+#ifdef M5ATOM
+//single button
+
+#endif
+
 String streamTitle;
 String station;
 
 #ifdef ESP32
+#ifndef M5SPK
 Audio audio;
+#else
+Audio audio(true, I2S_DAC_CHANNEL_LEFT_EN);
+#endif
 #else
 AudioGenerator *decoder = NULL;
 AudioFileSourceICYStream *file = NULL;
@@ -405,6 +514,7 @@ void setupLeds() {
 #endif
 
 
+#ifdef HAZDISPLAY
 #ifdef MFA
 void lcd_text(String text)
 {
@@ -431,6 +541,32 @@ void lcd_text(String text, String text2)
   display.display();
   //delay(500);
 }
+#endif
+#ifdef M5SPK
+void lcd_text(String text)
+{
+  M5.Lcd.fillScreen(TFT_BLACK);
+
+  M5.Lcd.setTextSize(1);              // Normal 1:1 pixel scale
+  M5.Lcd.setTextColor(TFT_WHITE); // Draw white text
+  M5.Lcd.setCursor(0, 0);             // Start at top-left corner
+  M5.Lcd.println(text);
+  //M5.Lcd.display();
+  //delay(500);
+}
+void lcd_text(String text, String text2)
+{
+  M5.Lcd.fillScreen(TFT_BLACK);
+
+  M5.Lcd.setTextSize(1);              // Normal 1:1 pixel scale
+  M5.Lcd.setTextColor(TFT_WHITE); // Draw white text
+  M5.Lcd.setCursor(0, 0);             // Start at top-left corner
+  M5.Lcd.println(text);
+  M5.Lcd.println(text2);
+  //M5.Lcd.display();
+  //delay(500);
+}
+#endif
 
 const int pages = 2;
 int currentPage = -1;
@@ -450,6 +586,7 @@ void setDisplayPage(int p) {
 
 void setupHardwareLcd() {
   //LCD
+#ifdef MFA
   Wire.begin(MAKEPYTHON_ESP32_SDA, MAKEPYTHON_ESP32_SCL);
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
@@ -460,12 +597,18 @@ void setupHardwareLcd() {
   }
   display.setRotation(2);
   display.clearDisplay();
+#endif
+#ifdef M5SPK
+  M5.begin();
+  M5.Lcd.setRotation(3);
+
+#endif
 }
 #endif
 
-#if defined(PBT) || defined(MFA)
 void setupHardwareButtons() {
 
+#if defined(PBT) || defined(MFA)
   //IO mode init
   pinMode(Pin_vol_up, DEF);
   pinMode(Pin_vol_down, DEF);
@@ -473,10 +616,14 @@ void setupHardwareButtons() {
   pinMode(Pin_previous, DEF);
   pinMode(Pin_pause, DEF);
   pinMode(Pin_next, DEF);
-}
 #endif
+#if defined(M5ATOM)
+  //IO mode init
+  pinMode(BTN, INPUT);
+#endif
+}
 
-#if defined(PSP) || defined(PBT) || defined(MFA) || defined(MFA) || defined(AUDIOSHIM)
+#if defined(PSP) || defined(PBT) || defined(MFA) || defined(AUDIOSHIM)
 File root;
 void printDirectory(File dir, int numTabs) {
   while (true) {
@@ -510,16 +657,20 @@ void setupHardwareSd() {
   if (!SD.begin(SD_CS, SPI))
   {
     Serial.println("Card Mount Failed");
+#ifdef HAZDISPLAY
 #ifdef MFA
     lcd_text("SD ERR");
+#endif
 #endif
     //    while (1)
     //      ;
   }
   else
   {
+#ifdef HAZDISPLAY
 #ifdef MFA
     lcd_text("SD OK");
+#endif
 #endif
   }
   root = SD.open("/");
@@ -551,10 +702,10 @@ void setupHardware() {
 #ifndef D1DAC32
   setupHardwareSerial();
 #endif
-#if defined(PBT) || defined(MFA)
+#if defined(PBT) || defined(MFA) || defined(M5ATOM)
   setupHardwareButtons();
 #endif
-#ifdef MFA
+#ifdef HAZDISPLAY
   setupHardwareLcd();
 #endif
 #if defined(PSP) || defined(PBT) || defined(MFA) || defined(AUDIOSHIM)
@@ -568,6 +719,12 @@ void setupHardware() {
   digitalWrite(39, LOW);
   digitalWrite(4, LOW);
 #endif
+#ifdef M5ATOM
+  //RGBLED
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
+#endif
 }
 
 void setupHardwareSerial() {
@@ -577,8 +734,10 @@ void setupHardwareSerial() {
 
 void setupHardwareAudio() {
 #ifdef ESP32
+#ifndef M5SPK
   //Audio(I2S)
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+#endif
   audio.setVolume(MAXVOL); // 0...21
 #else
   preallocateBuffer = malloc(preallocateBufferSize);
@@ -598,11 +757,11 @@ void setupHardwareAudio() {
 
 uint run_time = 0;
 uint8_t vol = 0;
-#if defined(PBT) || defined(MFA)
+#if defined(PBT) || defined(MFA) || defined (M5ATOM)
 boolean paused = false;
 uint button_time = 0;
 #endif
-#ifdef MFA
+#ifdef HAZDISPLAY
 uint page_time = 0;
 #endif
 
@@ -663,7 +822,77 @@ void audioStartAnnouncement() {
 #endif
 }
 
+#ifdef PSP
+void processVU() {
+  //=================================VU METER==========================================
+  // put your main code here, to run repeatedly:
+  if (audio.isRunning()) {
+    //if (vu > 0) vu-=4;
+    //vu = max(audio.getVUlevel(), vu);
+    vu = audio.getVUlevel();
+    uint8_t v = map (vu, 0, 255, 0, NUMLED + 1);
+    /*
+      if (v > 0) {
+      Serial.print((char)power, HEX);
+      Serial.print("  ==>>   ");
+      Serial.print(v, HEX);
+      Serial.println();
+      }
+    */
+    for (int i = 1; i < NUMLED + 1; i++) {
+      //or led0 is lit on no sound
+      if (v == 0 || v < i) {
+        ledI2c(ledMappings[i - 1], 0);
+      } else {
+        ledI2c(ledMappings[i - 1], 150);
+      }
+    }
+  } else {
+    for (int i = 0; i < NUMLED ; i++) {
+      ledI2c(ledMappings[i], 0);
+    }
+  }
+  updateI2c();
+}
+#endif
+
+#ifdef M5ATOM
+void processRGB() {
+  //rgb led off
+  pixels.clear();
+  if (silence) {
+    pixels.setPixelColor(0, pixels.Color(192, 0, 192));
+  } else {
+    if (audioIsRunning()) {
+      //rgb led green = playing
+      if (announcing) {
+        pixels.setPixelColor(0, pixels.Color(192, 0, 0));
+      } else {
+#if defined(PSPM5ECHO) || defined(ECHO2)
+        //green damaged??
+        pixels.setPixelColor(0, pixels.Color(0, 32, 192));
+#else
+        pixels.setPixelColor(0, pixels.Color(0, 192, 0));
+#endif
+      }
+    }
+  }
+  pixels.show();
+}
+#endif
+
 void loop() {
+  //=====================HANDLE WIFI========================================
+  unsigned long currentMillis = millis();
+  // if WiFi is down, try reconnecting
+  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
+    Serial.print(millis());
+    Serial.println("Reconnecting to WiFi...");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previousMillis = currentMillis;
+  }
+
 #ifdef ESP32
   //=====================HANDLE OTA UPDATE==================================
   ArduinoOTA.handle();
@@ -675,6 +904,11 @@ void loop() {
   client.loop();
   //=====================HANDLE AUDIO=======================================
   audioloop();
+#ifdef M5ATOM
+  //=====================HANDLE RGB LED=====================================
+  processRGB();
+#endif
+  //=====================HANDLE AUDIO 2 ====================================
   //do we need to change something ?
   // a audio is not running
   // b we have announcements and are not announcing
@@ -703,14 +937,14 @@ void loop() {
       }
     } else {
       // no announcements and not announcing
-//      if (strcmp(playingNow.c_str(), "") == 0) {
-        if (!audioIsRunning() || changeUrl) {
-          if (audioIsRunning()) audioStopSong();
-          changeUrl = false;
-          // start playing
-          audioStartSong();
-        }
-//      }
+      //      if (strcmp(playingNow.c_str(), "") == 0) {
+      if (!audioIsRunning() || changeUrl) {
+        if (audioIsRunning()) audioStopSong();
+        changeUrl = false;
+        // start playing
+        audioStartSong();
+      }
+      //      }
     }
   } else {
     //silence
@@ -730,8 +964,7 @@ void loop() {
       sendTitle = false;
       title_time = millis();
       //do not use strcat, breaks the sound!
-      client.publish("esp/text", "Now: ");
-      client.publish("esp/text", streamTitle.c_str());
+      client.publish("esp/text", (String("Now: " ) + streamTitle).c_str());
       client.publish("espaudio/onair", streamTitle.c_str());
     }
   }
@@ -758,10 +991,13 @@ void loop() {
   audioloop();
   client.loop();
   //#if defined(PBT) || defined(MFA)
-#if defined(MFA)
   //=====================HANDLE BUTTONS=====================================
+#if defined(PBT) || defined(MFA) || defined(M5ATOM)
   if (millis() - button_time > 300)
   {
+#if defined(PBT)
+#endif
+#if defined(MFA)
     //Button logic
     if (digitalRead(Pin_next) == 0)
     {
@@ -807,13 +1043,28 @@ void loop() {
       paused = !paused;
       audio.pauseResume();
     }
+#endif
+#ifdef M5ATOM
+    if (digitalRead(BTN) == 0)
+    {
+      Serial.println("Button");
+      //start
+      if (!audioIsRunning()) {
+
+      } else {
+
+      }
+    }
+
+#endif
     button_time = millis();
   }
+#endif
   //=====================HANDLE MQTT AGAIN==================================
   client.loop();
   audioloop();
   //=====================HANDLE DISPLAY================================================
-#ifdef MFA
+#ifdef HAZDISPLAY
   if (millis() - page_time > (3 * 1000))
   {
     currentPage++;
@@ -828,7 +1079,6 @@ void loop() {
   //=====================HANDLE MQTT AGAIN==================================
   client.loop();
   audioloop();
-#endif
 #ifdef ESP32
   //=====================HANDLE SERIAL VOLUME CONTROL==================================
   if (Serial.available())
@@ -839,35 +1089,7 @@ void loop() {
   }
 #endif
 #ifdef PSP
-  //=================================VU METER==========================================
-  // put your main code here, to run repeatedly:
-  if (audio.isRunning()) {
-    //if (vu > 0) vu-=4;
-    //vu = max(audio.getPowerLevel(), vu);
-    vu = audio.getPowerLevel();
-    uint8_t v = map (vu, 0, 255, 0, NUMLED + 1);
-    /*
-      if (v > 0) {
-      Serial.print((char)power, HEX);
-      Serial.print("  ==>>   ");
-      Serial.print(v, HEX);
-      Serial.println();
-      }
-    */
-    for (int i = 1; i < NUMLED + 1; i++) {
-      //or led0 is lit on no sound
-      if (v == 0 || v < i) {
-        ledI2c(ledMappings[i - 1], 0);
-      } else {
-        ledI2c(ledMappings[i - 1], 150);
-      }
-    }
-  } else {
-    for (int i = 0; i < NUMLED ; i++) {
-      ledI2c(ledMappings[i], 0);
-    }
-  }
-  updateI2c();
+  processVU();
 #endif
 }
 
@@ -884,7 +1106,7 @@ void audio_eof_mp3(const char *info) { //end of file
 void audio_showstation(const char *info) {
   Serial.print("station     "); Serial.println(info);
   station = String(info);
-#ifdef MFA
+#ifdef HAZDISPLAY
   dataUpdate = true;
 #endif
   sendStation = true;
@@ -895,7 +1117,7 @@ void audio_showstreaminfo(const char *info) {
 void audio_showstreamtitle(const char *info) {
   Serial.print("streamtitle "); Serial.println(info);
   streamTitle = String(info);
-#ifdef MFA
+#ifdef HAZDISPLAY
   dataUpdate = true;
 #endif
   sendTitle = true;
